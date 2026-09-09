@@ -123,6 +123,8 @@ final class PracticeEngine: ObservableObject {
         index = min(max(startIndex, 0), queue.count - 1)
         active = true
         playing = true
+        // Practicing counts as meeting the day's line.
+        store.recordMetDay()
         refreshVoiceAvailability()
         activateSession()
         observeSettings()

@@ -44,8 +44,14 @@ struct HomeScreen: View {
                         let entry = feed[i]
                         let line = entry.line.text(store.settings.language)
                         let isNight = (i == 0 && eveningNow) || entry.line.daypart == .night
+                        // The quiet streak lives inside the eyebrow — a fact, not a nag.
+                        let streak = Streak.count(metDays: store.settings.metDays, today: today)
+                        let streakTail = (i == 0 && streak >= 2)
+                            ? " · " + tr(store.settings.language, "\(streak) mornings", "\(streak) เช้าติดกัน")
+                            : ""
                         let eyebrow = (isNight ? "Night" : "Morning")
                             + " · " + AffirmationRepository.shortDate(entry.date, lang: store.settings.language)
+                            + streakTail
                         HomeCard(
                             theme: theme,
                             line: line,
@@ -57,9 +63,28 @@ struct HomeScreen: View {
                             onOpenMenu: { showMenu = true },
                             showChevron: i < feed.count - 1,
                             onOpenPractice: { router.push(.practice(source: "feed", index: i)) },
+                            // Hold the line to mark the morning met — the daily ritual.
+                            onHold: {
+                                if !Streak.metToday(metDays: store.settings.metDays, today: today) {
+                                    store.recordMetDay(AffirmationRepository.dayKey(today))
+                                }
+                            },
                             safeArea: geo.safeAreaInsets
                         )
                         .frame(width: geo.size.width, height: geo.size.height)
+                        .overlay(alignment: .top) {
+                            // Sunday, first card: the week, shown not scored.
+                            if i == 0,
+                               Calendar.current.component(.weekday, from: today) == 1,
+                               !store.settings.metDays.isEmpty {
+                                WeekSummaryPill(
+                                    settings: store.settings,
+                                    today: today,
+                                    theme: theme
+                                )
+                                .padding(.top, geo.safeAreaInsets.top + 64)
+                            }
+                        }
                     }
                 }
                 .scrollTargetLayout()
@@ -136,6 +161,7 @@ struct HomeCard: View {
     let showChevron: Bool
     var onClose: (() -> Void)? = nil
     var onOpenPractice: (() -> Void)? = nil
+    var onHold: (() -> Void)? = nil
     var safeArea: EdgeInsets = EdgeInsets()
 
     var body: some View {
@@ -183,6 +209,13 @@ struct HomeCard: View {
             .padding(.horizontal, AttaDimens.md)
             .padding(.top, safeArea.top)
             .padding(.bottom, safeArea.bottom)
+        }
+        // Hold anywhere on the card to mark the morning met — one medium
+        // haptic, no chrome (Android's detectTapGestures onLongPress).
+        .onLongPressGesture(minimumDuration: 0.5) {
+            guard let onHold else { return }
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            onHold()
         }
     }
 
@@ -278,6 +311,65 @@ struct HomeCard: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// Sunday's quiet receipt: seven dots and one sentence. Evidence the week
+/// happened, never a score. Port of Android WeekSummaryPill.
+private struct WeekSummaryPill: View {
+    let settings: AttaSettings
+    let today: Date
+    let theme: WidgetTheme
+
+    var body: some View {
+        let week = Streak.week(metDays: settings.metDays, moodLog: settings.moodLog, today: today)
+        let met = week.filter(\.met).count
+        if met > 0 {
+            HStack(spacing: 5) {
+                ForEach(week.indices, id: \.self) { i in
+                    Circle()
+                        .fill(dotColor(week[i]))
+                        .frame(width: 6, height: 6)
+                }
+                Spacer().frame(width: 5)
+                Text(label(week: week, met: met))
+                    .atta(.caption, theme.ink.opacity(0.7))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(theme.ink.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    private func dotColor(_ day: Streak.DaySummary) -> Color {
+        switch (day.met, day.mood) {
+        case (true, "calm"): AttaPalette.sage
+        case (true, "okay"): AttaPalette.champagne
+        case (true, "heavy"): AttaPalette.clay
+        case (true, _): theme.ink.opacity(0.4)
+        default: theme.ink.opacity(0.14)
+        }
+    }
+
+    private func label(week: [Streak.DaySummary], met: Int) -> String {
+        let th = settings.language == "th"
+        let topMood = Dictionary(grouping: week.compactMap(\.mood), by: { $0 })
+            .mapValues(\.count)
+            .max { $0.value < $1.value }?
+            .key
+        let moodWord: String?
+        switch topMood {
+        case "calm"?: moodWord = th ? "สงบ" : "calm"
+        case "okay"?: moodWord = th ? "กลาง ๆ" : "okay"
+        case "heavy"?: moodWord = th ? "หนัก" : "heavy"
+        default: moodWord = nil
+        }
+        if th {
+            return "สัปดาห์นี้: \(met) เช้า" + (moodWord.map { " · ส่วนใหญ่\($0)" } ?? "")
+        }
+        let mornings = met == 1 ? "morning" : "mornings"
+        return "This week: \(met) \(mornings)" + (moodWord.map { " · mostly \($0)" } ?? "")
     }
 }
 

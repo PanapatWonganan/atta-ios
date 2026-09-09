@@ -126,6 +126,8 @@ struct PracticeScreen: View {
                     // Android also logs analytics and, on "calm", asks
                     // ReviewPrompter for an in-app review — out of this slice.
                     store.logMood(day: AffirmationRepository.dayKey(), value: value)
+                    // Checking in counts as meeting the day's line.
+                    store.recordMetDay(AffirmationRepository.dayKey())
                     showCheckIn = false
                 }
             )

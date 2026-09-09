@@ -24,7 +24,12 @@ enum Reminders {
         let status = await center.notificationSettings().authorizationStatus
         guard status == .authorized || status == .provisional else { return }
 
-        center.removeAllPendingNotificationRequests()
+        // Clear only our own daily-line slots — the day-5 trial note must
+        // survive this refresh.
+        let pending = await center.pendingNotificationRequests()
+        center.removePendingNotificationRequests(
+            withIdentifiers: pending.map(\.identifier).filter { $0.hasPrefix("atta_line_") }
+        )
 
         let count = min(max(settings.remindersPerDay, 1), maxSlots)
         let focus = Set(settings.focusIds)
@@ -73,5 +78,54 @@ enum Reminders {
         let span = max(end - start, 0)
         let minutes = count == 1 ? start : start + slot * span / (count - 1)
         return (min(max(minutes / 60, 0), 23), min(max(minutes % 60, 0), 59))
+    }
+}
+
+/// The promise the trial-promise screen makes: a quiet note on day 5 of the
+/// free week, two days before anything charges. Scheduled whenever a trial
+/// plan is taken (re-purchasing restarts the clock). Android's worker
+/// re-checks the plan at fire time; iOS cannot, so the pending request is
+/// cancelled whenever the plan changes to lifetime or free.
+/// Port of Android TrialNote.kt.
+enum TrialNote {
+
+    static let requestId = "atta_trial_day5"
+    private static let noteDay: TimeInterval = 5 * 24 * 60 * 60
+
+    /// A taken trial starts the day-5 clock — Android's onPlanTaken.
+    static func planTaken(_ plan: String, store: AttaStore) {
+        guard plan == Plans.trialWeekly || plan == Plans.trialYearly else { return }
+        let now = Date().timeIntervalSince1970 * 1000
+        store.setTrialStart(now)
+        schedule(trialStartMs: now, language: store.settings.language)
+    }
+
+    static func schedule(trialStartMs: Double, language: String) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [requestId])
+        let fireAt = Date(timeIntervalSince1970: trialStartMs / 1000).addingTimeInterval(noteDay)
+        let delay = fireAt.timeIntervalSinceNow
+        guard delay > 0 else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = tr(
+            language,
+            "Two days left of your free week",
+            "อีกสองวันครบสัปดาห์ฟรีของคุณ"
+        )
+        content.body = tr(
+            language,
+            "Still yours to keep or let go. Nothing charges before day 7.",
+            "จะเก็บไว้หรือปล่อยไปก็ได้ ไม่มีอะไรตัดเงินก่อนวันที่ 7"
+        )
+        content.sound = nil
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
+        center.add(UNNotificationRequest(identifier: requestId, content: content, trigger: trigger))
+    }
+
+    static func cancel() {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: [requestId])
     }
 }

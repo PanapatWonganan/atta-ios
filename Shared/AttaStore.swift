@@ -22,6 +22,9 @@ struct AttaSettings: Codable, Equatable {
     var moodLog: [String] = [] // "<yyyy-MM-dd>|<calm|okay|heavy>", one per day
     var plusPassUntil: Double = 0 // epoch seconds; rewarded day-pass expiry
     var usageDays: [String] = [] // distinct "yyyy-MM-dd" the app was opened
+    var metDays: [String] = [] // days the line was actually met (hold, practice, check-in)
+    var trialStartMs: Double = 0 // epoch ms a trial plan was taken; drives the day-5 note
+    var paywallDismisses: Int = 0 // "Not now" count; the second one earns the weekly downsell
 
     /// Free means no paid plan AND no live day pass.
     var freeTier: Bool {
@@ -116,6 +119,19 @@ final class AttaStore: ObservableObject {
             $0.usageDays = Array(days.sorted(by: >).prefix(60))
         }
     }
+
+    /// The day counts as met once; keeps the most recent 60 like usageDays.
+    func recordMetDay(_ day: String = AffirmationRepository.dayKey()) {
+        update {
+            let days = Set($0.metDays + [day])
+            $0.metDays = Array(days.sorted(by: >).prefix(60))
+        }
+    }
+
+    /// Stamped once per trial: re-purchasing restarts the day-5 clock.
+    func setTrialStart(_ epochMs: Double) { update { $0.trialStartMs = epochMs } }
+
+    func recordPaywallDismiss() { update { $0.paywallDismisses += 1 } }
 
     /// One entry per day: relogging a day replaces its value.
     func logMood(day: String, value: String) {

@@ -84,6 +84,17 @@ struct RootView: View {
         .onChange(of: billing.purchasedPlan) { _, plan in
             guard let plan else { return }
             store.setPlan(plan)
+            // A taken trial starts the day-5 clock (the note the trial-promise
+            // screen commits to). Re-purchasing restarts it.
+            TrialNote.planTaken(plan, store: store)
+        }
+        .onChange(of: store.settings.plan) { _, plan in
+            // iOS can't re-check the plan when the note fires (Android's
+            // worker does): a lifetime upgrade or a drop to free must cancel
+            // the pending day-5 note right now.
+            if plan == Plans.lifetime || Plans.isFree(plan) {
+                TrialNote.cancel()
+            }
         }
     }
 
