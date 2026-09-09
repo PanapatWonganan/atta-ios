@@ -14,6 +14,11 @@ enum Route: Hashable {
     case questions
     case processing
     case result
+    case firstLine
+    case commit
+    case compare
+    case valueRecap
+    case trialPromise
     case paywall(source: String)
     case widgetMoment
     case practice(source: String, index: Int)
@@ -89,6 +94,11 @@ struct RootView: View {
             case .questions: QuestionsScreen()
             case .processing: ProcessingScreen()
             case .result: ResultScreen()
+            case .firstLine: FirstLineScreen()
+            case .commit: CommitScreen()
+            case .compare: ComparisonScreen()
+            case .valueRecap: ValueRecapScreen()
+            case .trialPromise: TrialPromiseScreen()
             case .paywall(let source): PaywallScreen(source: source)
             case .widgetMoment: WidgetMomentScreen()
             case .practice(let source, let index):

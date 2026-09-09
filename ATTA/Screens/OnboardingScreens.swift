@@ -268,7 +268,7 @@ struct ResultScreen: View {
             }
             Spacer(minLength: 0)
             PrimaryButton(text: "See my first line") {
-                router.push(.paywall(source: "onboarding"))
+                router.push(.firstLine)
             }
         }
         .padding(.horizontal, AttaDimens.md)
