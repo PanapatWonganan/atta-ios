@@ -66,7 +66,7 @@ struct FirstLineScreen: View {
             ZStack {
                 GeometryReader { geo in theme.gradient(in: geo.size) }
                 // The living layer: pools of light breathing under the first line.
-                LivingBackdrop(theme: theme)
+                ThemeAtmosphere(theme: theme)
             }
             .ignoresSafeArea()
         }

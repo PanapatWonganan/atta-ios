@@ -71,7 +71,7 @@ struct PracticeScreen: View {
             Color.black.opacity(0.30)
                 .ignoresSafeArea()
             // The living layer: pools of light breathing under the practice text.
-            LivingBackdrop(theme: theme)
+            ThemeAtmosphere(theme: theme)
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {

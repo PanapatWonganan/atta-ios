@@ -12,6 +12,7 @@ struct WidgetTheme: Identifiable, Hashable {
     let lightInk: Bool // true when ink is light (dark theme surface)
     let ruleChampagne: Bool // Linen and Onyx carry the champagne rule
     let hairline: Bool // Onyx: 1pt edge at 7% light ink — shadows vanish on black
+    var sceneId: String? = nil // "sea" | "rain" | "stars": a drawn moving scene in the app; the widget keeps the gradient
 
     static func == (lhs: WidgetTheme, rhs: WidgetTheme) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
@@ -127,7 +128,34 @@ enum WidgetThemes {
         lightInk: false, ruleChampagne: false, hairline: false
     )
 
-    static let all = [dawn, mist, linen, dusk, onyx, sageField, clay, deepWater, rosewood, midnight, honey]
+    // Scene themes: the app draws a slow moving scene (waves, rain, stars)
+    // behind the line; previews and the widget fall back to the gradient.
+
+    static let sea = WidgetTheme(
+        id: "sea", displayName: "Sea",
+        stops: [(0, Color(atta: 0x2E5A66)), (0.5, Color(atta: 0x244852)), (1, Color(atta: 0x16303A))],
+        angleDeg: 170, ink: Color(atta: 0xE3EEF0),
+        lightInk: true, ruleChampagne: false, hairline: false, sceneId: "sea"
+    )
+
+    static let rainfall = WidgetTheme(
+        id: "rainfall", displayName: "Rainfall",
+        stops: [(0, Color(atta: 0x5C707A)), (0.5, Color(atta: 0x4A5C66)), (1, Color(atta: 0x37464F))],
+        angleDeg: 168, ink: Color(atta: 0xE8EFF2),
+        lightInk: true, ruleChampagne: false, hairline: false, sceneId: "rain"
+    )
+
+    static let starlight = WidgetTheme(
+        id: "starlight", displayName: "Starlight",
+        stops: [(0, Color(atta: 0x1B2130)), (0.55, Color(atta: 0x151A28)), (1, Color(atta: 0x0F131F))],
+        angleDeg: 160, ink: Color(atta: 0xE9ECF5),
+        lightInk: true, ruleChampagne: false, hairline: false, sceneId: "stars"
+    )
+
+    static let all = [
+        dawn, mist, linen, dusk, onyx, sageField, clay, deepWater,
+        rosewood, midnight, honey, sea, rainfall, starlight,
+    ]
 
     static let defaultId = "dawn"
 

@@ -168,7 +168,7 @@ struct HomeCard: View {
         ZStack {
             DriftingGradient(theme: theme)
             // The living layer: pools of light breathing over the gradient.
-            LivingBackdrop(theme: theme)
+            ThemeAtmosphere(theme: theme)
             VStack(alignment: .leading, spacing: 0) {
                 header
                     .padding(.top, 18)
@@ -481,46 +481,49 @@ struct ThemeSheet: View {
     let onRequireUpgrade: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Theme")
-                .font(AttaType.serif(20))
-                .foregroundStyle(colors.ink)
-                .padding(.bottom, 10)
-            ForEach(WidgetThemes.all) { theme in
-                let locked = freeTier && theme.id != WidgetThemes.freeThemeId
-                Button {
-                    if locked { onRequireUpgrade() } else { onPick(theme.id) }
-                } label: {
-                    HStack {
-                        HStack(spacing: 14) {
-                            ThemeDot(theme: theme, size: 22)
-                            Text(theme.displayName)
-                                .font(AttaType.sans(15))
-                                .foregroundStyle(colors.ink)
+        // Fourteen themes no longer fit a fixed column — the list scrolls.
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Theme")
+                    .font(AttaType.serif(20))
+                    .foregroundStyle(colors.ink)
+                    .padding(.bottom, 10)
+                ForEach(WidgetThemes.all) { theme in
+                    let locked = freeTier && theme.id != WidgetThemes.freeThemeId
+                    Button {
+                        if locked { onRequireUpgrade() } else { onPick(theme.id) }
+                    } label: {
+                        HStack {
+                            HStack(spacing: 14) {
+                                ThemeDot(theme: theme, size: 22)
+                                Text(theme.displayName)
+                                    .font(AttaType.sans(15))
+                                    .foregroundStyle(colors.ink)
+                            }
+                            Spacer(minLength: 0)
+                            if theme.id == selectedId {
+                                Text("IN USE")
+                                    .font(AttaType.sans(9, .medium))
+                                    .tracking(1.2)
+                                    .foregroundStyle(AttaPalette.champagneDeep)
+                            } else if locked {
+                                Text("Unlock")
+                                    .font(AttaType.sans(11))
+                                    .tracking(0.5)
+                                    .foregroundStyle(AttaPalette.champagneDeep)
+                            }
                         }
-                        Spacer(minLength: 0)
-                        if theme.id == selectedId {
-                            Text("IN USE")
-                                .font(AttaType.sans(9, .medium))
-                                .tracking(1.2)
-                                .foregroundStyle(AttaPalette.champagneDeep)
-                        } else if locked {
-                            Text("Unlock")
-                                .font(AttaType.sans(11))
-                                .tracking(0.5)
-                                .foregroundStyle(AttaPalette.champagneDeep)
-                        }
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 13)
+                        .contentShape(RoundedRectangle(cornerRadius: AttaDimens.radiusChip))
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 13)
-                    .contentShape(RoundedRectangle(cornerRadius: AttaDimens.radiusChip))
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+                Spacer().frame(height: AttaDimens.md)
             }
-            Spacer().frame(height: AttaDimens.md)
+            .padding(.horizontal, AttaDimens.md)
+            .padding(.vertical, AttaDimens.xs)
         }
-        .padding(.horizontal, AttaDimens.md)
-        .padding(.vertical, AttaDimens.xs)
         .frame(maxHeight: .infinity, alignment: .top)
     }
 }
