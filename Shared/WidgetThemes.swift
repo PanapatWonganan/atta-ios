@@ -106,7 +106,28 @@ enum WidgetThemes {
         lightInk: true, ruleChampagne: false, hairline: false
     )
 
-    static let all = [dawn, mist, linen, dusk, onyx, sageField, clay, deepWater]
+    static let rosewood = WidgetTheme(
+        id: "rosewood", displayName: "Rosewood",
+        stops: [(0, Color(atta: 0xF2DEDC)), (0.52, Color(atta: 0xE5C6C4)), (1, Color(atta: 0xD5ABA9))],
+        angleDeg: 158, ink: Color(atta: 0x33211F),
+        lightInk: false, ruleChampagne: false, hairline: false
+    )
+
+    static let midnight = WidgetTheme(
+        id: "midnight", displayName: "Midnight",
+        stops: [(0, Color(atta: 0x2A3240)), (0.52, Color(atta: 0x212837)), (1, Color(atta: 0x171D2B))],
+        angleDeg: 152, ink: Color(atta: 0xE8ECF2),
+        lightInk: true, ruleChampagne: false, hairline: false
+    )
+
+    static let honey = WidgetTheme(
+        id: "honey", displayName: "Honey",
+        stops: [(0, Color(atta: 0xF6E8CE)), (0.52, Color(atta: 0xEFD9AF)), (1, Color(atta: 0xE4C48F))],
+        angleDeg: 162, ink: Color(atta: 0x2E2414),
+        lightInk: false, ruleChampagne: false, hairline: false
+    )
+
+    static let all = [dawn, mist, linen, dusk, onyx, sageField, clay, deepWater, rosewood, midnight, honey]
 
     static let defaultId = "dawn"
 

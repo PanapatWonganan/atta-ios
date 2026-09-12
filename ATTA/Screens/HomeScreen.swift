@@ -167,6 +167,8 @@ struct HomeCard: View {
     var body: some View {
         ZStack {
             DriftingGradient(theme: theme)
+            // The living layer: pools of light breathing over the gradient.
+            LivingBackdrop(theme: theme)
             VStack(alignment: .leading, spacing: 0) {
                 header
                     .padding(.top, 18)

@@ -63,7 +63,12 @@ struct FirstLineScreen: View {
         .padding(.vertical, AttaDimens.sm)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background {
-            GeometryReader { geo in theme.gradient(in: geo.size) }.ignoresSafeArea()
+            ZStack {
+                GeometryReader { geo in theme.gradient(in: geo.size) }
+                // The living layer: pools of light breathing under the first line.
+                LivingBackdrop(theme: theme)
+            }
+            .ignoresSafeArea()
         }
         .task {
             // One spoken line; Practice owns everything longer.
