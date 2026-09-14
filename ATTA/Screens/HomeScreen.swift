@@ -9,6 +9,7 @@ import WidgetKit
 struct HomeScreen: View {
     @EnvironmentObject var store: AttaStore
     @EnvironmentObject var router: Router
+    @EnvironmentObject var billing: AttaBilling
     @Environment(\.atta) var colors
     @Environment(\.requestReview) private var requestReview
 
@@ -16,6 +17,12 @@ struct HomeScreen: View {
     @State private var eveningNow = Calendar.current.component(.hour, from: Date()) >= 18
     @State private var showMenu = false
     @State private var showThemes = false
+
+    // The welcome-back offer: a declined paywall, a return visit, a real
+    // discount — at most once a day, decided once per appearance of Home.
+    @State private var showWelcome = false
+    @State private var welcomeOffer: AttaBilling.WelcomeOffer?
+    @State private var welcomeDecided = false
 
     // AdMob native cards land with the iOS ads pass (Android: NativeAdCard
     // after every 7 lines on the free tier; the page<->feed index mapping
@@ -99,6 +106,7 @@ struct HomeScreen: View {
             // system prompt is likewise one-shot.
             _ = await Reminders.requestPermission()
         }
+        .onAppear(perform: maybeShowWelcome)
         .task(id: reminderKey) {
             await Reminders.rescheduleAsync(store.settings)
         }
@@ -130,6 +138,66 @@ struct HomeScreen: View {
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(28)
             .presentationBackground(colors.canvas)
+        }
+        // A swipe-down counts as the quiet "Not now" it is — nothing else runs.
+        .sheet(isPresented: $showWelcome) {
+            if let welcomeOffer {
+                WelcomeOfferSheet(
+                    offer: welcomeOffer,
+                    onTake: {
+                        showWelcome = false
+                        takeWelcome()
+                    },
+                    onDismiss: { showWelcome = false }
+                )
+                .presentationDetents([.height(460)])
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(28)
+                .presentationBackground(colors.canvas)
+            }
+        }
+    }
+
+    /// A declined paywall, a return visit, a real discount: decided once, at
+    /// most once per 20 hours, never in the same process session as the
+    /// decline. Port of the Android HomeScreen showWelcome block.
+    private func maybeShowWelcome() {
+        guard !welcomeDecided else { return }
+        welcomeDecided = true
+        let offer: AttaBilling.WelcomeOffer?
+        if paywallDeclinedThisSession {
+            offer = nil
+        } else if let live = billing.welcomeOffer {
+            offer = live
+        } else if AttaBilling.localTestingMode && Plans.isFree(store.settings.plan) {
+            // No store on this device/build: a sample offer keeps the sheet
+            // testable; real devices only ever see App Store Connect prices.
+            offer = AttaBilling.WelcomeOffer(
+                discounted: "$19.99", original: "$39.99", perMonthApprox: "$1.67"
+            )
+        } else {
+            offer = nil
+        }
+        guard let offer,
+              store.settings.freeTier,
+              store.settings.paywallDismisses >= 1,
+              Date().timeIntervalSince1970 - store.settings.welcomeOfferShownMs / 1000
+                  > 20 * 3600
+        else { return }
+        welcomeOffer = offer
+        showWelcome = true
+        // iOS has no analytics layer yet — Android logs welcome_offer_view here.
+        store.recordWelcomeOfferShown(Date().timeIntervalSince1970 * 1000)
+    }
+
+    /// Takes the welcome price — the store flow when it's live, the paywall's
+    /// local dev path otherwise.
+    private func takeWelcome() {
+        if billing.ready {
+            Task { await billing.purchaseWelcome() }
+        } else {
+            TrialNote.planTaken(Plans.trialYearly, store: store)
+            store.setPlan(Plans.trialYearly)
         }
     }
 

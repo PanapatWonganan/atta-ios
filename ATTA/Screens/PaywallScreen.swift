@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// The welcome offer waits for a RETURN visit: a decline in this very process
+/// session never triggers it on the next screen. Process-lifetime, like the
+/// Android MainActivity top-level flag (module-visible so Home can read it).
+var paywallDeclinedThisSession = false
+
 private struct PlanOption {
     let id: String
     let title: String
@@ -152,7 +157,10 @@ struct PaywallScreen: View {
             // start and schedule the day-5 note here (Android's onPlanTaken).
             TrialNote.planTaken(plan, store: store)
         }
-        if plan == nil || plan == Plans.free { store.recordPaywallDismiss() }
+        if plan == nil || plan == Plans.free {
+            store.recordPaywallDismiss()
+            paywallDeclinedThisSession = true
+        }
         if let plan { store.setPlan(plan) }
         if source == "onboarding" {
             store.setOnboardingDone()

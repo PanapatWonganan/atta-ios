@@ -280,6 +280,8 @@ struct SettingsScreen: View {
                         .font(AttaType.serif(24))
                         .foregroundStyle(colors.ink)
                         .padding(.top, 8)
+                    Spacer().frame(height: 14)
+                    StreakCard(settings: settings)
                     Spacer().frame(height: 10)
 
                     SectionLabel(text: "Daily lines")

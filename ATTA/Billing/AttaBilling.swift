@@ -18,6 +18,18 @@ final class AttaBilling: ObservableObject {
     @Published private(set) var ready = false
     @Published private(set) var purchasedPlan: String?
 
+    /// The welcome-back deal: the yearly plan's priced introductory offer (or
+    /// a promotional offer named welcome*), StoreKit 2's shape of Android's
+    /// Play "welcome" offer. Nil until the store reports one; a free trial
+    /// alone never becomes the deal.
+    @Published private(set) var welcomeOffer: WelcomeOffer?
+
+    struct WelcomeOffer: Equatable {
+        let discounted: String // first-year price, formatted
+        let original: String? // the plain recurring price it undercuts
+        let perMonthApprox: String?
+    }
+
     private var products: [String: Product] = [:]
     private var updatesTask: Task<Void, Never>?
 
@@ -28,11 +40,38 @@ final class AttaBilling: ObservableObject {
             let loaded = try await Product.products(for: ids)
             products = Dictionary(uniqueKeysWithValues: loaded.map { ($0.id, $0) })
             ready = !products.isEmpty
+            if let yearly = products[Self.yearlyProduct] {
+                welcomeOffer = Self.findWelcomeOffer(in: yearly)
+            }
             await refreshEntitlements()
             observeUpdates()
         } catch {
             ready = false
         }
+    }
+
+    /// A priced intro on the yearly plan (pay-as-you-go or pay-up-front) or a
+    /// promotional offer named welcome* becomes the returning-user deal. The
+    /// free trial alone is not a discount, so it publishes nothing.
+    private static func findWelcomeOffer(in yearly: Product) -> WelcomeOffer? {
+        guard let sub = yearly.subscription else { return nil }
+        let candidates = [sub.introductoryOffer].compactMap { $0 }
+            + sub.promotionalOffers.filter { $0.id?.contains("welcome") == true }
+        guard let offer = candidates.first(where: {
+            $0.paymentMode == .payAsYouGo || $0.paymentMode == .payUpFront
+        }) else { return nil }
+        return WelcomeOffer(
+            discounted: offer.displayPrice,
+            original: yearly.displayPrice,
+            perMonthApprox: (offer.price / 12).formatted(yearly.priceFormatStyle)
+        )
+    }
+
+    /// Takes the welcome price. Platform difference vs Android: there is no
+    /// offer token to pass — StoreKit applies the yearly plan's introductory
+    /// offer automatically for users the store deems eligible.
+    func purchaseWelcome() async {
+        await purchase(planId: Plans.trialYearly)
     }
 
     func purchase(planId: String) async {

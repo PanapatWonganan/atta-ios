@@ -25,10 +25,42 @@ struct AttaSettings: Codable, Equatable {
     var metDays: [String] = [] // days the line was actually met (hold, practice, check-in)
     var trialStartMs: Double = 0 // epoch ms a trial plan was taken; drives the day-5 note
     var paywallDismisses: Int = 0 // "Not now" count; the second one earns the weekly downsell
+    var welcomeOfferShownMs: Double = 0 // last time the welcome-back offer sheet appeared
 
     /// Free means no paid plan AND no live day pass.
     var freeTier: Bool {
         Plans.isFree(plan) && Date().timeIntervalSince1970 >= plusPassUntil
+    }
+
+    init() {}
+
+    /// Field-by-field with defaults (Android's `prefs[key] ?: default`), so a
+    /// newly added field never fails decoding and resets saved settings.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        onboardingDone = try c.decodeIfPresent(Bool.self, forKey: .onboardingDone) ?? false
+        savedIds = try c.decodeIfPresent([String].self, forKey: .savedIds) ?? []
+        themeId = try c.decodeIfPresent(String.self, forKey: .themeId) ?? WidgetThemes.defaultId
+        focusIds = try c.decodeIfPresent([String].self, forKey: .focusIds) ?? []
+        morningHour = try c.decodeIfPresent(Int.self, forKey: .morningHour) ?? 7
+        morningMinute = try c.decodeIfPresent(Int.self, forKey: .morningMinute) ?? 0
+        eveningLine = try c.decodeIfPresent(Bool.self, forKey: .eveningLine) ?? true
+        remindersPerDay = try c.decodeIfPresent(Int.self, forKey: .remindersPerDay) ?? 3
+        windowEndHour = try c.decodeIfPresent(Int.self, forKey: .windowEndHour) ?? 21
+        windowEndMinute = try c.decodeIfPresent(Int.self, forKey: .windowEndMinute) ?? 0
+        plan = try c.decodeIfPresent(String.self, forKey: .plan) ?? Plans.none
+        appearance = try c.decodeIfPresent(String.self, forKey: .appearance) ?? "system"
+        language = try c.decodeIfPresent(String.self, forKey: .language) ?? "en"
+        practiceMood = try c.decodeIfPresent(String.self, forKey: .practiceMood) ?? "calm"
+        practicePace = try c.decodeIfPresent(String.self, forKey: .practicePace) ?? "slow"
+        customLines = try c.decodeIfPresent([String].self, forKey: .customLines) ?? []
+        moodLog = try c.decodeIfPresent([String].self, forKey: .moodLog) ?? []
+        plusPassUntil = try c.decodeIfPresent(Double.self, forKey: .plusPassUntil) ?? 0
+        usageDays = try c.decodeIfPresent([String].self, forKey: .usageDays) ?? []
+        metDays = try c.decodeIfPresent([String].self, forKey: .metDays) ?? []
+        trialStartMs = try c.decodeIfPresent(Double.self, forKey: .trialStartMs) ?? 0
+        paywallDismisses = try c.decodeIfPresent(Int.self, forKey: .paywallDismisses) ?? 0
+        welcomeOfferShownMs = try c.decodeIfPresent(Double.self, forKey: .welcomeOfferShownMs) ?? 0
     }
 }
 
@@ -132,6 +164,10 @@ final class AttaStore: ObservableObject {
     func setTrialStart(_ epochMs: Double) { update { $0.trialStartMs = epochMs } }
 
     func recordPaywallDismiss() { update { $0.paywallDismisses += 1 } }
+
+    func recordWelcomeOfferShown(_ epochMs: Double) {
+        update { $0.welcomeOfferShownMs = epochMs }
+    }
 
     /// One entry per day: relogging a day replaces its value.
     func logMood(day: String, value: String) {
