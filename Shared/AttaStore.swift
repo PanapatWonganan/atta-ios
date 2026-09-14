@@ -26,6 +26,7 @@ struct AttaSettings: Codable, Equatable {
     var trialStartMs: Double = 0 // epoch ms a trial plan was taken; drives the day-5 note
     var paywallDismisses: Int = 0 // "Not now" count; the second one earns the weekly downsell
     var welcomeOfferShownMs: Double = 0 // last time the welcome-back offer sheet appeared
+    var unlockedWallpapers: [String] = [] // theme ids earned via rewarded ads
 
     /// Free means no paid plan AND no live day pass.
     var freeTier: Bool {
@@ -61,6 +62,7 @@ struct AttaSettings: Codable, Equatable {
         trialStartMs = try c.decodeIfPresent(Double.self, forKey: .trialStartMs) ?? 0
         paywallDismisses = try c.decodeIfPresent(Int.self, forKey: .paywallDismisses) ?? 0
         welcomeOfferShownMs = try c.decodeIfPresent(Double.self, forKey: .welcomeOfferShownMs) ?? 0
+        unlockedWallpapers = try c.decodeIfPresent([String].self, forKey: .unlockedWallpapers) ?? []
     }
 }
 
@@ -167,6 +169,14 @@ final class AttaStore: ObservableObject {
 
     func recordWelcomeOfferShown(_ epochMs: Double) {
         update { $0.welcomeOfferShownMs = epochMs }
+    }
+
+    /// A rewarded ad buys this wallpaper for keeps (kept for parity with
+    /// Android; nothing calls it until the iOS ads pass lands).
+    func addUnlockedWallpaper(_ id: String) {
+        update {
+            if !$0.unlockedWallpapers.contains(id) { $0.unlockedWallpapers.append(id) }
+        }
     }
 
     /// One entry per day: relogging a day replaces its value.

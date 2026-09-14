@@ -32,6 +32,7 @@ targets:
           - noto_serif_thai_semibold.ttf
         UIBackgroundModes:
           - audio
+        NSPhotoLibraryAddUsageDescription: "ATTA saves wallpapers you choose to your photo library."
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         ITSAppUsesNonExemptEncryption: false

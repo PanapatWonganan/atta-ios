@@ -23,6 +23,7 @@ enum Route: Hashable {
     case widgetMoment
     case practice(source: String, index: Int)
     case gallery
+    case wallpapers
     case focus
     case saved
     case settings
@@ -121,6 +122,7 @@ struct RootView: View {
             case .practice(let source, let index):
                 PracticeScreen(source: source, startIndex: index)
             case .gallery: WidgetGalleryScreen()
+            case .wallpapers: WallpapersScreen()
             case .focus: FocusScreen()
             case .saved: SavedScreen()
             case .settings: SettingsScreen()

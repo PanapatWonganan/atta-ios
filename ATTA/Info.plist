@@ -22,6 +22,8 @@
 	<string>1</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>ATTA saves wallpapers you choose to your photo library.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>ibm_plex_sans_thai_light.ttf</string>

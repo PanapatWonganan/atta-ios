@@ -115,7 +115,7 @@ struct HomeScreen: View {
                 showMenu = false
                 router.push(route)
             }
-            .presentationDetents([.height(330)])
+            .presentationDetents([.height(392)]) // five rows now, Wallpapers included
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(28)
             .presentationBackground(colors.canvas)
@@ -506,6 +506,7 @@ struct NavSheet: View {
 
     private let rows: [(label: String, route: Route)] = [
         ("Widgets", .gallery),
+        ("Wallpapers", .wallpapers),
         ("Focus", .focus),
         ("Saved", .saved),
         ("Settings", .settings),
