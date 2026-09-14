@@ -70,6 +70,12 @@ struct RootView: View {
                 destination(route)
             }
         }
+        .overlay(alignment: .top) {
+            // The streak's applause, above every screen: appears only in
+            // the moment today's line gets met, then leaves on its own.
+            StreakToastHost()
+                .padding(.top, 12)
+        }
         .environment(\.atta, colors)
         .environmentObject(store)
         .environmentObject(router)
